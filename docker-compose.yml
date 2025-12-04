@@ -1,0 +1,55 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: course-jump-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: course_jump_system
+      TZ: Asia/Shanghai
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./mysql-data:/var/lib/mysql
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./database/my.cnf:/etc/mysql/conf.d/my.cnf
+    networks:
+      - course-net
+
+  backend:
+    build: ./backend
+    container_name: course-jump-backend
+    restart: always
+    ports:
+      - "3001:3001"
+    environment:
+      DB_HOST: mysql
+      DB_USER: root
+      DB_PASSWORD: password
+      DB_NAME: course_jump_system
+    depends_on:
+      - mysql
+    networks:
+      - course-net
+    volumes:
+      - ./backend/src:/app/src  # 只挂载源码，避免 node_modules 冲突
+
+  frontend:
+    build: ./frontend
+    container_name: course-jump-frontend
+    restart: always
+    ports:
+      - "3000:3000"
+    networks:
+      - course-net
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+      - ./frontend/index.html:/app/index.html
+
+networks:
+  course-net:
+    driver: bridge
+
+volumes:
+  mysql-data:
