@@ -1,6 +1,5 @@
 import { Request, Response } from 'express';
 import pool from '../utils/database';
-import { encryptCredentials } from '../services/encryption.service';
 
 export const createCourse = async (req: Request, res: Response) => {
   try {
@@ -36,27 +35,20 @@ export const createCourse = async (req: Request, res: Response) => {
     const user = users[0] as any;
     console.log('用户信息:', user);
 
-    // 加密凭证
-    console.log('加密凭证，用户名:', username);
-    const credentials = JSON.stringify({ username, password });
-    const encrypted = encryptCredentials(credentials);
-    console.log('加密结果:', { content: encrypted.content.substring(0, 20) + '...', iv: encrypted.iv, tag: encrypted.tag });
-
     // 创建课程
     console.log('创建课程，用户ID:', user.id);
     const [result] = await pool.query(
       `INSERT INTO courses 
-       (user_id, course_name, course_url, description, login_url, encrypted_credentials, iv, auth_tag) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+       (user_id, course_name, course_url, description, login_url, username, password) 
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
       [
           user.id,
           courseName,
           courseUrl,
           description || null,
           loginUrl || null,
-          encrypted.content,
-          encrypted.iv,
-          encrypted.tag
+          username,
+          password
         ]
     );
     
@@ -248,15 +240,12 @@ export const updateCourse = async (req: Request, res: Response) => {
 
     // 更新课程信息
     if (username && password) {
-      // 如果提供了新的凭证，加密并更新
-      const credentials = JSON.stringify({ username, password });
-      const encrypted = encryptCredentials(credentials);
-
+      // 如果提供了新的凭证，直接更新
       await pool.query(
         `UPDATE courses 
-         SET course_name = ?, description = ?, login_url = ?, encrypted_credentials = ?, iv = ?, auth_tag = ? 
+         SET course_name = ?, description = ?, login_url = ?, username = ?, password = ? 
          WHERE id = ?`,
-        [courseName, description || null, loginUrl || null, encrypted.content, encrypted.iv, encrypted.tag, course.id]
+        [courseName, description || null, loginUrl || null, username, password, course.id]
       );
     } else {
       // 否则只更新基本信息

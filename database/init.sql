@@ -27,9 +27,8 @@ CREATE TABLE IF NOT EXISTS courses (
     course_url VARCHAR(500) NOT NULL,
     description TEXT,
     login_url VARCHAR(500), -- 登录页面URL（如果与课程URL不同）
-    encrypted_credentials TEXT NOT NULL, -- 加密的登录凭证
-    iv VARCHAR(255) NOT NULL, -- 加密初始向量
-    auth_tag VARCHAR(255), -- GCM认证标签
+    username VARCHAR(255) NOT NULL, -- 直接存储用户名
+    password VARCHAR(255) NOT NULL, -- 直接存储密码
     last_accessed TIMESTAMP NULL,
     access_count INT DEFAULT 0,
     is_active BOOLEAN DEFAULT TRUE,
