@@ -1,5 +1,5 @@
 // page/BilibiliPlayerPage.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { getUserFromStorage, logout } from '../services/auth';
 
@@ -16,6 +16,14 @@ const BilibiliPlayerPage: React.FC = () => {
   
   const [user, setUser] = useState<any>(null);
   const [courseName, setCourseName] = useState('B站视频');
+  
+  // 分析相关状态
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisStatus, setAnalysisStatus] = useState<string>('idle');
+  const [analysisId, setAnalysisId] = useState<string>('');
+  const [knowledgePoints, setKnowledgePoints] = useState<Array<{start_time: number; end_time?: number; content: string}>>([]);
+  const [error, setError] = useState<string>('');
+  const playerRef = useRef<HTMLIFrameElement>(null);
 
   // 初始化
   useEffect(() => {
@@ -61,6 +69,118 @@ const BilibiliPlayerPage: React.FC = () => {
       console.error('退出登录失败:', error);
       window.location.href = '/';
     }
+  };
+
+  // 分析视频
+  const handleAnalyzeVideo = async () => {
+    try {
+      setIsAnalyzing(true);
+      setAnalysisStatus('processing');
+      setError('');
+      setKnowledgePoints([]);
+
+      // 调用分析API
+      const response = await fetch('/api/video-analysis', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ bvid })
+      });
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.error || '分析请求失败');
+      }
+
+      const { analysisId, status } = result.data;
+      setAnalysisId(analysisId);
+      setAnalysisStatus(status);
+
+      // 如果状态已经是completed，直接获取结果
+      if (status === 'completed') {
+        await fetchAnalysisResult(analysisId);
+      }
+    } catch (error) {
+      console.error('分析视频失败:', error);
+      setError(error instanceof Error ? error.message : '分析视频失败');
+      setAnalysisStatus('failed');
+      setIsAnalyzing(false);
+    }
+  };
+
+  // 获取分析结果
+  const fetchAnalysisResult = async (id: string) => {
+    try {
+      const response = await fetch(`/api/video-analysis/${id}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.error || '获取分析结果失败');
+      }
+
+      const { status, knowledgePoints } = result.data;
+      setAnalysisStatus(status);
+      setKnowledgePoints(knowledgePoints);
+
+      if (status === 'completed') {
+        setIsAnalyzing(false);
+      }
+    } catch (error) {
+      console.error('获取分析结果失败:', error);
+      setError(error instanceof Error ? error.message : '获取分析结果失败');
+      setAnalysisStatus('failed');
+      setIsAnalyzing(false);
+    }
+  };
+
+  // 轮询分析结果
+  useEffect(() => {
+    let intervalId: NodeJS.Timeout;
+
+    if (analysisId && analysisStatus === 'processing') {
+      intervalId = setInterval(() => {
+        fetchAnalysisResult(analysisId);
+      }, 3000); // 每3秒轮询一次
+    }
+
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [analysisId, analysisStatus]);
+
+  // 跳转到指定时间
+  const jumpToTime = (seconds: number) => {
+    if (playerRef.current) {
+      // 使用postMessage与B站播放器通信
+      const playerWindow = playerRef.current.contentWindow;
+      if (playerWindow) {
+        // 发送跳转到指定时间的命令
+        playerWindow.postMessage({
+          'biliplayer': {
+            'cmd': 'seek',
+            'value': seconds
+          }
+        }, '*');
+      }
+    }
+  };
+
+  // 格式化时间显示
+  const formatTime = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    const millisecs = Math.floor((seconds % 1) * 100);
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}.${millisecs.toString().padStart(2, '0')}`;
   };
 
   return (
@@ -127,7 +247,7 @@ const BilibiliPlayerPage: React.FC = () => {
 
         <div className="bg-white rounded-lg shadow-lg p-4">
           {/* 播放器控制栏 */}
-          <div className="mb-4 flex justify-between items-center">
+          <div className="mb-4 flex justify-between items-center flex-wrap gap-4">
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
                 <button
@@ -190,8 +310,33 @@ const BilibiliPlayerPage: React.FC = () => {
               >
                 重置大小
               </button>
+              
+              {/* 分析按钮 */}
+              <button
+                onClick={handleAnalyzeVideo}
+                disabled={isAnalyzing}
+                className={`px-4 py-1 rounded flex items-center space-x-2 ml-4 ${isAnalyzing ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 text-white hover:bg-green-700'}`}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span>{isAnalyzing ? '分析中...' : '分析视频'}</span>
+              </button>
             </div>
           </div>
+
+          {/* 分析状态显示 */}
+          {analysisStatus !== 'idle' && (
+            <div className="mb-4 p-3 rounded-lg flex items-center space-x-2">
+              <div className={`w-3 h-3 rounded-full ${analysisStatus === 'completed' ? 'bg-green-500' : analysisStatus === 'processing' ? 'bg-yellow-500 animate-pulse' : 'bg-red-500'}`}></div>
+              <span className={`text-sm font-medium ${analysisStatus === 'completed' ? 'text-green-600' : analysisStatus === 'processing' ? 'text-yellow-600' : 'text-red-600'}`}>
+                {analysisStatus === 'completed' ? '分析完成' : analysisStatus === 'processing' ? '正在分析中...' : '分析失败'}
+              </span>
+              {error && (
+                <span className="text-sm text-red-500 ml-2">{error}</span>
+              )}
+            </div>
+          )}
 
           {/* B站播放器 */}
           <div className="relative bg-black rounded-lg overflow-hidden shadow-lg" style={{
@@ -199,6 +344,7 @@ const BilibiliPlayerPage: React.FC = () => {
             height: playerOptions.height
           }}>
             <iframe
+              ref={playerRef}
               src={buildBilibiliUrl()}
               className="absolute inset-0 w-full h-full border-0"
               scrolling="no"
@@ -209,6 +355,37 @@ const BilibiliPlayerPage: React.FC = () => {
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             />
           </div>
+
+          {/* 知识点列表 */}
+          {knowledgePoints.length > 0 && (
+            <div className="mt-6">
+              <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center space-x-2">
+                <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                </svg>
+                <span>知识点列表</span>
+              </h2>
+              <div className="bg-gray-50 rounded-lg p-4">
+                <ul className="space-y-3">
+                  {knowledgePoints.map((kp, index) => (
+                    <li key={index} className="border-b border-gray-200 pb-3 last:border-b-0 last:pb-0">
+                      <div className="flex items-start space-x-3">
+                        <button
+                          onClick={() => jumpToTime(kp.start_time)}
+                          className="bg-blue-100 hover:bg-blue-200 text-blue-800 font-medium px-3 py-1 rounded-lg cursor-pointer transition-colors whitespace-nowrap"
+                        >
+                          {formatTime(kp.start_time)}
+                        </button>
+                        <div className="flex-1">
+                          <p className="text-gray-700">{kp.content}</p>
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

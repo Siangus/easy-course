@@ -30,13 +30,15 @@ export const createCourse = async (req, res) => {
         // 创建课程
         console.log('创建课程，用户ID:', user.id);
         const [result] = await pool.query(`INSERT INTO courses 
-       (user_id, course_name, course_url, description, login_url, encrypted_credentials, iv, auth_tag) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, [
+   (user_id, course_name, course_url, description, login_url, username, password, encrypted_credentials, iv, auth_tag) 
+   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [
             user.id,
             courseName,
             courseUrl,
             description || null,
             loginUrl || null,
+            username || '', // 添加 username 字段值
+            password || '', // 添加 password 字段值
             encrypted.content,
             encrypted.iv,
             encrypted.tag

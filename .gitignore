@@ -1,0 +1,84 @@
+# 依赖目录
+**/node_modules
+
+# 编译输出
+build/
+dist/
+
+# 环境变量文件
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# 临时文件目录
+**/temp/
+tmp/
+
+# 数据库数据
+mysql-data/
+
+# Docker相关
+*.tar
+*.dockerignore
+.Dockerfile
+
+# IDE配置
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# 操作系统文件
+.DS_Store
+Thumbs.db
+
+# 日志文件
+*.log
+logs/
+
+# 测试报告
+coverage/
+.nyc_output/
+
+# 编译缓存
+*.tsbuildinfo
+.cache/
+
+# 其他临时文件
+*.tmp
+*.temp
+*.pid
+*.seed
+*.pid.lock
+
+# 证书和密钥文件
+*.pem
+*.key
+*.crt
+
+# API调用配置文件
+api具体调用.txt
+
+# 可执行文件
+*.exe
+*.bin
+*.sh
+*.bat
+
+# yt-dlp相关
+yt-dlp.exe
+yt-dlp-readme.md
+
+# TraeAI相关
+.trae/
+
+# 项目文档（可选，根据需要调整）
+*.md
+!README.md
+!API_DESIGN.md
+!DATABASE_DESIGN.md
+!DETAILED_DESIGN.md
+!Docker使用方法.md

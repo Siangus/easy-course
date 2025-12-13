@@ -7,16 +7,16 @@ export const createCourse = async (req: Request, res: Response) => {
     console.log('收到创建课程请求');
     const authRequest = req as any;
     const userId = authRequest.user?.userId;
-    
+
     console.log('用户ID:', userId);
-    
+
     if (!userId) {
       console.error('用户ID不存在');
       return res.status(401).json({ error: '未授权访问' });
     }
-    
+
     const { courseName, courseUrl, description, loginUrl, username, password } = req.body;
-    
+
     console.log('课程信息:', { courseName, courseUrl, description, loginUrl, username });
 
     // 获取用户ID
@@ -25,14 +25,14 @@ export const createCourse = async (req: Request, res: Response) => {
       'SELECT id FROM users WHERE uuid = ?',
       [userId]
     );
-    
+
     console.log('用户查询结果:', users);
-    
+
     if (!Array.isArray(users) || users.length === 0) {
       console.error('用户不存在');
       return res.status(404).json({ error: '用户不存在' });
     }
-    
+
     const user = users[0] as any;
     console.log('用户信息:', user);
 
@@ -46,39 +46,41 @@ export const createCourse = async (req: Request, res: Response) => {
     console.log('创建课程，用户ID:', user.id);
     const [result] = await pool.query(
       `INSERT INTO courses 
-       (user_id, course_name, course_url, description, login_url, encrypted_credentials, iv, auth_tag) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+   (user_id, course_name, course_url, description, login_url, username, password, encrypted_credentials, iv, auth_tag) 
+   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
-          user.id,
-          courseName,
-          courseUrl,
-          description || null,
-          loginUrl || null,
-          encrypted.content,
-          encrypted.iv,
-          encrypted.tag
-        ]
+        user.id,
+        courseName,
+        courseUrl,
+        description || null,
+        loginUrl || null,
+        username || '',  // 添加 username 字段值
+        password || '',  // 添加 password 字段值
+        encrypted.content,
+        encrypted.iv,
+        encrypted.tag
+      ]
     );
-    
+
     console.log('创建课程结果:', result);
 
     const insertResult = result as any;
     console.log('插入结果:', insertResult);
-    
+
     // 获取插入的课程ID
     const insertId = insertResult.insertId || insertResult[0]?.insertId;
     console.log('插入ID:', insertId);
-    
+
     if (!insertId) {
       console.error('插入失败，没有返回插入ID');
       return res.status(500).json({ error: '创建课程失败' });
     }
-    
+
     const [newCourse] = await pool.query(
       'SELECT uuid as id, course_name as courseName, course_url as courseUrl, description, created_at FROM courses WHERE id = ?',
       [insertResult.insertId]
     );
-    
+
     console.log('查询新创建的课程结果:', newCourse);
 
     res.status(201).json({
@@ -89,7 +91,7 @@ export const createCourse = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('创建课程错误:', error);
     console.error('错误详情:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
-    res.status(500).json({ 
+    res.status(500).json({
       error: '服务器内部错误',
       message: (error as Error).message,
       stack: (error as Error).stack
@@ -102,14 +104,14 @@ export const getCourses = async (req: Request, res: Response) => {
     console.log('收到获取课程请求');
     const authRequest = req as any;
     const userId = authRequest.user?.userId;
-    
+
     console.log('用户ID:', userId);
-    
+
     if (!userId) {
       console.error('用户ID不存在');
       return res.status(401).json({ error: '未授权访问' });
     }
-    
+
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 20;
     const offset = (page - 1) * limit;
@@ -120,14 +122,14 @@ export const getCourses = async (req: Request, res: Response) => {
       'SELECT id FROM users WHERE uuid = ?',
       [userId]
     );
-    
+
     console.log('用户查询结果:', users);
-    
+
     if (!Array.isArray(users) || users.length === 0) {
       console.error('用户不存在');
       return res.status(404).json({ error: '用户不存在' });
     }
-    
+
     const user = users[0] as any;
     console.log('用户信息:', user);
 
@@ -137,7 +139,7 @@ export const getCourses = async (req: Request, res: Response) => {
       'SELECT COUNT(*) as total FROM courses WHERE user_id = ? AND is_active = TRUE',
       [user.id]
     );
-    
+
     console.log('课程总数查询结果:', countResult);
     const total = (countResult as any[])[0].total;
 
@@ -152,7 +154,7 @@ export const getCourses = async (req: Request, res: Response) => {
        LIMIT ? OFFSET ?`,
       [user.id, parseInt(limit.toString()), parseInt(offset.toString())]
     );
-    
+
     console.log('课程列表查询结果:', courses);
 
     res.json({
@@ -168,7 +170,7 @@ export const getCourses = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('获取课程错误:', error);
     console.error('错误详情:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
-    res.status(500).json({ 
+    res.status(500).json({
       error: '服务器内部错误',
       message: (error as Error).message,
       stack: (error as Error).stack
@@ -186,11 +188,11 @@ export const getCourseById = async (req: Request, res: Response) => {
       'SELECT id FROM users WHERE uuid = ?',
       [userId]
     );
-    
+
     if (!Array.isArray(users) || users.length === 0) {
       return res.status(404).json({ error: '用户不存在' });
     }
-    
+
     const user = users[0] as any;
 
     // 获取课程
@@ -227,11 +229,11 @@ export const updateCourse = async (req: Request, res: Response) => {
       'SELECT id FROM users WHERE uuid = ?',
       [userId]
     );
-    
+
     if (!Array.isArray(users) || users.length === 0) {
       return res.status(404).json({ error: '用户不存在' });
     }
-    
+
     const user = users[0] as any;
 
     // 检查课程是否存在并属于该用户
@@ -295,11 +297,11 @@ export const deleteCourse = async (req: Request, res: Response) => {
       'SELECT id FROM users WHERE uuid = ?',
       [userId]
     );
-    
+
     if (!Array.isArray(users) || users.length === 0) {
       return res.status(404).json({ error: '用户不存在' });
     }
-    
+
     const user = users[0] as any;
 
     // 检查课程是否存在并属于该用户
@@ -340,11 +342,11 @@ export const launchCourse = async (req: Request, res: Response) => {
       'SELECT id FROM users WHERE uuid = ?',
       [userId]
     );
-    
+
     if (!Array.isArray(users) || users.length === 0) {
       return res.status(404).json({ error: '用户不存在' });
     }
-    
+
     const user = users[0] as any;
 
     // 获取课程和凭证
