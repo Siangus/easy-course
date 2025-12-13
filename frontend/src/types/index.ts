@@ -8,6 +8,7 @@ export interface Course {
   lastAccessed?: string;
   accessCount: number;
   createdAt: string;
+  updatedAt: string;
 }
 
 // 用户类型
