@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Course } from '../types';
 import { launchCourse } from '../services/course';
+import { useNavigate } from 'react-router-dom';
 
 interface CourseCardProps {
   course: Course;
@@ -11,17 +12,25 @@ interface CourseCardProps {
 const CourseCard: React.FC<CourseCardProps> = ({ course, onEdit, onDelete }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [showActions, setShowActions] = useState(false);
+  const navigate = useNavigate();
 
   const handleLaunch = async () => {
-    setIsLoading(true);
-    try {
-      const result = await launchCourse(course.id);
-      // 在新标签页打开
-      window.open(result.data.redirectUrl, '_blank');
-    } catch (error) {
-      console.error('启动课程失败:', error);
-    } finally {
-      setIsLoading(false);
+    // 检测是否为ZJOOC课程
+    if (course.courseUrl.includes('www.zjooc.cn')) {
+      // ZJOOC课程跳转到独立页面
+      window.open(`/zjooc/course/${course.id}`, '_blank');
+    } else {
+      // 非ZJOOC课程执行原有逻辑
+      setIsLoading(true);
+      try {
+        const result = await launchCourse(course.id);
+        // 在新标签页打开
+        window.open(result.data.redirectUrl, '_blank');
+      } catch (error) {
+        console.error('启动课程失败:', error);
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 

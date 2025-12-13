@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import LoginRegister from './components/LoginRegister';
 import CourseDashboard from './components/CourseDashboard';
+import ZjoocCourse from './components/zjooc/ZjoocCourse';
 import { isAuthenticated } from './services/auth';
 
 // 受保护路由组件
@@ -23,6 +24,15 @@ function App() {
             element={
               <ProtectedRoute>
                 <CourseDashboard />
+              </ProtectedRoute>
+            } 
+          />
+          {/* ZJOOC课程路由 */}
+          <Route 
+            path="/zjooc/course/:id" 
+            element={
+              <ProtectedRoute>
+                <ZjoocCourse />
               </ProtectedRoute>
             } 
           />

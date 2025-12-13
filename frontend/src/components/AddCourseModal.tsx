@@ -26,6 +26,7 @@ const AddCourseModal: React.FC<AddCourseModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [isZjoocCourse, setIsZjoocCourse] = useState(false);
 
   // 编辑模式下，填充表单数据
   useEffect(() => {
@@ -38,6 +39,8 @@ const AddCourseModal: React.FC<AddCourseModalProps> = ({
         username: '',
         password: ''
       });
+      // 检查是否为ZJOOC课程
+      setIsZjoocCourse(course.courseUrl.includes('www.zjooc.cn'));
     } else {
       setFormData({
         courseName: '',
@@ -47,9 +50,15 @@ const AddCourseModal: React.FC<AddCourseModalProps> = ({
         username: '',
         password: ''
       });
+      setIsZjoocCourse(false);
     }
     setError(null);
   }, [course]);
+
+  // 检测courseUrl变化，判断是否为ZJOOC课程
+  useEffect(() => {
+    setIsZjoocCourse(formData.courseUrl.includes('www.zjooc.cn'));
+  }, [formData.courseUrl]);
 
   if (!isOpen) return null;
 
@@ -116,15 +125,22 @@ const AddCourseModal: React.FC<AddCourseModalProps> = ({
             <label htmlFor="courseUrl" className="block text-sm font-medium text-gray-700 mb-1">
               课程URL *
             </label>
-            <input
-              type="url"
-              id="courseUrl"
-              placeholder="输入课程URL（例如：https://example.com/course）"
-              className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              value={formData.courseUrl}
-              onChange={(e) => setFormData({...formData, courseUrl: e.target.value})}
-              required
-            />
+            <div className="relative">
+              <input
+                type="url"
+                id="courseUrl"
+                placeholder="输入课程URL（例如：https://example.com/course）"
+                className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pr-24"
+                value={formData.courseUrl}
+                onChange={(e) => setFormData({...formData, courseUrl: e.target.value})}
+                required
+              />
+              {isZjoocCourse && (
+                <div className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
+                  ZJOOC课程
+                </div>
+              )}
+            </div>
           </div>
           
           <div className="mb-4">
