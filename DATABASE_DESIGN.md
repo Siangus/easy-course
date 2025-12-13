@@ -71,7 +71,7 @@
 
 #### 2.2.3 courses表
 
-**描述**：存储课程信息和加密的登录凭证
+**描述**：存储课程信息和登录凭证
 
 | 字段名 | 数据类型 | 约束 | 描述 |
 |--------|----------|------|------|
@@ -82,9 +82,8 @@
 | course_url | VARCHAR(500) | NOT NULL | 课程URL |
 | description | TEXT | | 课程描述 |
 | login_url | VARCHAR(500) | | 登录页面URL（可选，默认与课程URL相同） |
-| encrypted_credentials | TEXT | NOT NULL | 加密的登录凭证（JSON格式） |
-| iv | VARCHAR(255) | NOT NULL | 加密初始向量 |
-| auth_tag | VARCHAR(255) | | GCM认证标签 |
+| username | VARCHAR(255) | NOT NULL | 课程登录用户名 |
+| password | VARCHAR(255) | NOT NULL | 课程登录密码 |
 | last_accessed | TIMESTAMP | NULL | 最后访问时间 |
 | access_count | INT | DEFAULT 0 | 访问次数 |
 | is_active | BOOLEAN | DEFAULT TRUE | 是否激活 |
@@ -114,6 +113,25 @@
 - idx_access_time (access_time)
 - idx_user_course (user_id, course_id)
 
+#### 2.2.5 temporary_tokens表
+
+**描述**：存储课程访问的临时令牌，用于安全访问代理页面
+
+| 字段名 | 数据类型 | 约束 | 描述 |
+|--------|----------|------|------|
+| id | INT | PRIMARY KEY, AUTO_INCREMENT | 令牌ID |
+| token | VARCHAR(255) | UNIQUE, NOT NULL | 临时访问令牌 |
+| course_id | INT | NOT NULL, FOREIGN KEY REFERENCES courses(id) ON DELETE CASCADE | 课程ID |
+| user_id | INT | NOT NULL, FOREIGN KEY REFERENCES users(id) ON DELETE CASCADE | 用户ID |
+| expires_at | TIMESTAMP | NOT NULL | 令牌过期时间 |
+| created_at | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | 创建时间 |
+
+**索引**：
+- idx_token (token)
+- idx_course_id (course_id)
+- idx_user_id (user_id)
+- idx_expires_at (expires_at)
+
 ## 3. 数据流程
 
 ### 3.1 用户注册流程
@@ -128,8 +146,7 @@
 
 1. 用户填写课程信息
 2. 后端生成随机UUID
-3. 加密用户名和密码
-4. 插入courses表
+3. 直接插入courses表，存储明文凭证
 
 ### 3.3 课程访问流程
 
@@ -145,9 +162,6 @@
 ### 4.1 数据加密
 
 - **密码加密**：使用bcrypt算法，加盐存储
-- **课程凭证加密**：使用AES-256-GCM算法
-  - 加密数据：用户名和密码的JSON字符串
-  - 加密参数：32字节密钥，12字节IV，16字节认证标签
 
 ### 4.2 访问控制
 

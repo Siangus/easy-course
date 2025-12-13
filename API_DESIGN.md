@@ -37,8 +37,7 @@ http://localhost:3001/api
 ```json
 {
   "success": false,
-  "error": "错误信息",
-  "message": "详细错误描述"
+  "error": "错误信息"
 }
 ```
 
@@ -82,7 +81,7 @@ http://localhost:3001/api
   "success": true,
   "message": "注册成功",
   "data": {
-    "userId": "uuid",
+    "id": "uuid",
     "email": "user@example.com",
     "username": "username"
   }
@@ -335,15 +334,32 @@ http://localhost:3001/api
 
 #### 3.3.1 代理课程页面
 
-**描述**：生成课程跳转页面
+**描述**：获取课程跳转信息
 
 - **URL**：`/proxy/course/:courseId`
 - **方法**：`GET`
-- **认证**：临时访问Token
+- **认证**：临时访问Token（可选）
 - **查询参数**：
-  - `token`：临时访问Token
+  - `token`：临时访问Token（当前未验证）
 
-- **响应**：HTML页面
+- **响应**：
+
+```json
+{
+  "success": true,
+  "message": "获取登录信息成功",
+  "data": {
+    "loginUrl": "https://example.com/login",
+    "redirectUrl": "https://example.com/course",
+    "credentials": {
+      "username": "course-username",
+      "password": "course-password"
+    },
+    "courseTitle": "课程名称",
+    "courseUrl": "https://example.com/course"
+  }
+}
+```
 
 #### 3.3.2 代理视频流
 
@@ -351,9 +367,8 @@ http://localhost:3001/api
 
 - **URL**：`/proxy/video/:courseId`
 - **方法**：`GET`
-- **认证**：临时访问Token
+- **认证**：临时访问Token（可选）
 - **查询参数**：
-  - `token`：临时访问Token
   - `videoUrl`：原始视频URL
 
 - **响应**：视频流
@@ -390,7 +405,7 @@ http://localhost:3001/api
 ## 4. API版本管理
 
 - 当前版本：v1
-- 版本控制方式：URL路径前缀（如 `/api/v1/`）
+- 版本控制方式：直接使用 `/api` 作为基础路径，暂不使用版本前缀
 - 向后兼容策略：支持旧版本API至少6个月
 
 ## 5. 安全考虑
