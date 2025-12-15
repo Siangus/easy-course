@@ -12,8 +12,8 @@ RUN npm install
 # 拷贝其余文件
 COPY . .
 
-# 暴露 Vite 默认端口
+# 暴露开发服务器端口
 EXPOSE 3000
 
-# 启动开发模式
+# 启动开发服务器
 CMD ["npm", "run", "dev"]

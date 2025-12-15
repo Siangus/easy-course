@@ -192,7 +192,6 @@ const BilibiliPlayer: React.FC<BilibiliPlayerProps> = ({ bvid, courseName, onClo
             className="w-full h-full border-0"
             scrolling="no"
             frameBorder="no"
-            frameSpacing="0"
             allowFullScreen
             title="B站视频播放器"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
