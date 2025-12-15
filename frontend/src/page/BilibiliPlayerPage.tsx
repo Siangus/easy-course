@@ -181,6 +181,61 @@ const BilibiliPlayerPage: React.FC = () => {
     }
   };
 
+  // 解析时间戳为秒数
+  const parseTimestamp = (timestamp: string): number => {
+    const match = timestamp.match(/\[(\d+)(?::(\d+))?(?::(\d+))?\]/);
+    if (!match) return 0;
+    
+    const parts = match.slice(1).filter(Boolean).map(Number);
+    
+    if (parts.length === 3) {
+      // [时:分:秒]
+      return parts[0] * 3600 + parts[1] * 60 + parts[2];
+    } else if (parts.length === 2) {
+      // [分:秒]
+      return parts[0] * 60 + parts[1];
+    } else {
+      return 0;
+    }
+  };
+
+  // 将文本转换为包含可点击时间戳的React元素
+  const renderTextWithTimestamps = (text: string) => {
+    const timestampRegex = /\[(\d+)(?::(\d+))?(?::(\d+))?\]/g;
+    const parts = [];
+    let lastIndex = 0;
+    let match;
+
+    while ((match = timestampRegex.exec(text)) !== null) {
+      // 添加时间戳前的文本
+      if (match.index > lastIndex) {
+        parts.push(text.slice(lastIndex, match.index));
+      }
+
+      // 添加可点击的时间戳
+      const timestamp = match[0];
+      const seconds = parseTimestamp(timestamp);
+      parts.push(
+        <button
+          key={match.index}
+          onClick={() => setPlayerOptions(prev => ({ ...prev, t: seconds }))}
+          className="text-blue-400 hover:text-blue-300 underline cursor-pointer"
+        >
+          {timestamp}
+        </button>
+      );
+
+      lastIndex = match.index + match[0].length;
+    }
+
+    // 添加剩余文本
+    if (lastIndex < text.length) {
+      parts.push(text.slice(lastIndex));
+    }
+
+    return parts;
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black text-white">
       {/* 顶部导航栏 */}
@@ -447,7 +502,9 @@ const BilibiliPlayerPage: React.FC = () => {
                 </div>
               ) : videoSummary ? (
                 <div className="bg-gray-900/70 p-4 rounded-lg border border-gray-700">
-                  <p className="text-gray-300 leading-relaxed whitespace-pre-wrap">{videoSummary}</p>
+                  <p className="text-gray-300 leading-relaxed whitespace-pre-wrap">
+                    {renderTextWithTimestamps(videoSummary)}
+                  </p>
                 </div>
               ) : (
                 <div className="bg-gray-900/70 p-4 rounded-lg border border-gray-700">
