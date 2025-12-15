@@ -209,20 +209,6 @@ const BilibiliPlayer: React.FC<BilibiliPlayerProps> = ({ bvid, courseName, onClo
     setSize({ width: newWidth, height: newHeight });
   };
 
-  // 跳转到指定时间
-  const handleJumpToTime = () => {
-    const time = prompt('请输入要跳转的时间（秒）:', playerOptions.t.toString());
-    if (time !== null) {
-      const seconds = parseInt(time) || 0;
-      setPlayerOptions(prev => ({ ...prev, t: Math.max(0, seconds) }));
-      
-      // 重新加载iframe以应用新时间
-      if (iframeRef.current) {
-        iframeRef.current.src = buildBilibiliUrl();
-      }
-    }
-  };
-
   return (
     <div className="fixed inset-0 z-50">
       {/* 背景遮罩 */}
@@ -277,7 +263,6 @@ const BilibiliPlayer: React.FC<BilibiliPlayerProps> = ({ bvid, courseName, onClo
           playerOptions={playerOptions}
           setPlayerOptions={setPlayerOptions}
           handleResize={handleResize}
-          handleJumpToTime={handleJumpToTime}
           size={size}
           isFullscreen={isFullscreen}
         />

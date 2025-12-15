@@ -6,12 +6,12 @@ interface ControlBarProps {
   playerOptions: Pick<PlayerOptions, 'p' | 't'>;
   setPlayerOptions: React.Dispatch<React.SetStateAction<PlayerOptions>>;
   handleResize: (delta: number) => void;
-  handleJumpToTime: () => void;
+
   size: { width: number; height: number };
   isFullscreen: boolean;
 }
 
-const ControlBar: React.FC<ControlBarProps> = ({ bvid, playerOptions, setPlayerOptions, handleResize, handleJumpToTime, size, isFullscreen }) => {
+const ControlBar: React.FC<ControlBarProps> = ({ bvid, playerOptions, setPlayerOptions, handleResize, size, isFullscreen }) => {
   return (
     <div className={`bg-gray-100 p-3 flex justify-between items-center border-t ${isFullscreen ? 'hidden' : ''}`}>
       <div className="flex items-center space-x-4">
@@ -46,15 +46,7 @@ const ControlBar: React.FC<ControlBarProps> = ({ bvid, playerOptions, setPlayerO
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/>
             </svg>
           </button>
-          <button
-            onClick={handleJumpToTime}
-            className="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 text-sm flex items-center"
-          >
-            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
-            跳转到: {playerOptions.t}s
-          </button>
+
         </div>
         
         <div className="flex items-center space-x-2">

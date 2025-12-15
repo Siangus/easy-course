@@ -413,27 +413,7 @@ const BilibiliPlayerPage: React.FC = () => {
               </div>
             </div>
 
-            {/* 快捷操作 */}
-            <div className="bg-gray-800/50 backdrop-blur-sm rounded-lg p-5">
-              <h3 className="text-lg font-bold mb-3 flex items-center">
-                <svg className="w-5 h-5 mr-2 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-                快捷跳转
-              </h3>
-              <div className="space-y-2">
-                {[0, 60, 120, 300, 600].map((time) => (
-                  <button
-                    key={time}
-                    onClick={() => setPlayerOptions(prev => ({ ...prev, t: time }))}
-                    className="w-full bg-gray-700 hover:bg-gray-600 px-3 py-2 rounded transition-colors flex justify-between items-center"
-                  >
-                    <span>跳到 {time}秒</span>
-                    <span className="text-xs text-gray-400">{Math.floor(time/60)}:{String(time%60).padStart(2, '0')}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
+
 
             {/* 视频总结 */}
             <div className="bg-gray-800/50 backdrop-blur-sm rounded-lg p-5">
