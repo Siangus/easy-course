@@ -17,6 +17,10 @@ export interface BibiGPTResponse {
   costDuration: number;
   remainingTime: number;
   summary: string;
+  events?: Array<{
+    time: string;
+    message: string;
+  }>;
   message?: string; // 错误信息字段
   detail?: {
     summary: string;

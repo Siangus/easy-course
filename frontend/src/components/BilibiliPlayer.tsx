@@ -28,6 +28,7 @@ const BilibiliPlayer: React.FC<BilibiliPlayerProps> = ({ bvid, courseName, onClo
   
   // 视频总结相关状态
   const [videoSummary, setVideoSummary] = useState<string>('');
+  const [videoEvents, setVideoEvents] = useState<Array<{time: string; message: string}>>([]);
   const [isLoadingSummary, setIsLoadingSummary] = useState<boolean>(false);
   const [summaryError, setSummaryError] = useState<string>('');
   
@@ -48,12 +49,21 @@ const BilibiliPlayer: React.FC<BilibiliPlayerProps> = ({ bvid, courseName, onClo
       // 检查是否使用默认的占位API密钥
       if (apiKey === 'aroZX30hEzg3') {
         console.warn('使用的是默认占位API密钥，请替换为实际有效的API密钥');
-        // 提供模拟数据作为示例
-        const mockSummary = `这是一段模拟的视频总结示例。\n\n📺 视频主要内容包括：\n1. B站视频播放器的基本功能介绍\n2. 如何使用弹幕和自动播放功能\n3. 播放器的全屏和拖拽操作\n4. 视频总结功能的实现原理\n5. 如何调整播放器的尺寸和位置\n\n⏱️ 关键时间点：\n- 0:00 - 播放器初始化\n- 1:30 - 弹幕功能演示\n- 3:45 - 全屏操作说明\n- 5:20 - 视频总结获取`;
+        // 提供模拟数据作为示例 - 使用与API响应相同的JSON格式
+        const mockJsonResponse = {
+          summary: "这是一段模拟的视频总结示例。视频主要内容包括B站视频播放器的基本功能介绍、如何使用弹幕和自动播放功能、播放器的全屏和拖拽操作、视频总结功能的实现原理以及如何调整播放器的尺寸和位置。",
+          events: [
+            { time: "00:00:00", message: "播放器初始化" },
+            { time: "00:01:30", message: "弹幕功能演示" },
+            { time: "00:03:45", message: "全屏操作说明" },
+            { time: "00:05:20", message: "视频总结获取" }
+          ]
+        };
         
         // 模拟网络延迟
         await new Promise(resolve => setTimeout(resolve, 1500));
-        setVideoSummary(mockSummary);
+        setVideoSummary(mockJsonResponse.summary);
+        setVideoEvents(mockJsonResponse.events);
         return;
       }
       
@@ -64,17 +74,7 @@ const BilibiliPlayer: React.FC<BilibiliPlayerProps> = ({ bvid, courseName, onClo
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${apiKey}`,
         },
-        body: JSON.stringify({
-          url: videoUrl,
-          includeDetail: true,
-          promptConfig: {
-            showEmoji: true,
-            showTimestamp: true,
-            sentenceNumber: 5,
-            detailLevel: 700,
-            outputLanguage: "zh-CN"
-          }
-        })
+        body: JSON.stringify({          url: videoUrl,          includeDetail: true,          promptConfig: {            customPrompt: "请以第三方客观视角处理以下内容，并严格遵守以下要求：\n\n【处理要求】\n1. 使用完全客观的第三方视角，避免任何作者视角或主观表述\n2. 不提及自身身份或角色\n3. 基于内容生成有意义的时间戳作为导航\n4. 时间戳应合理分布，反映内容的关键节点\n5. 每个时间戳至少要保证不少于15s的间隔\n6. 时间戳尽可能覆盖足够的视频时长而不是集中于某一部分\n\n【输出格式】\n必须返回且仅返回以下JSON格式，绝对不要在JSON前后添加任何其他内容，包括但不限于Markdown反引号(```)、注释、解释或其他文本：\n{\n  \"summary\": \"客观总结内容，概括主要内容\",\n  \"events\": [\n    {\"time\": \"hh:mm:ss\", \"message\": \"具体事件描述\"},\n    {\"time\": \"hh:mm:ss\", \"message\": \"具体事件描述\"}\n  ]\n}\n\n【重要规则】\n- JSON必须是有效的、可解析的格式\n- 时间戳格式必须是\"hh:mm:ss\"\n- events数组应按时间顺序排列\n- 不要添加任何额外的文本、解释或Markdown标记\n- 绝对不要在JSON前后添加Markdown反引号(```)或其他任何符号",            showEmoji: true,            showTimestamp: true,            sentenceNumber: 5,            detailLevel: 700,            outputLanguage: "zh-CN",            isRefresh: true          }        })
       });
       
       if (!response.ok) {
@@ -95,7 +95,31 @@ const BilibiliPlayer: React.FC<BilibiliPlayerProps> = ({ bvid, courseName, onClo
       console.log('API成功响应:', data);
       
       if (data.success) {
-        setVideoSummary(data.summary);
+        // 尝试解析返回的JSON内容，因为API可能返回JSON字符串
+        try {
+          // 移除可能存在的Markdown反引号和JSON标签
+          let cleanedSummary = data.summary;
+          if (cleanedSummary.startsWith('```json')) {
+            cleanedSummary = cleanedSummary.slice(7);
+          } else if (cleanedSummary.startsWith('```')) {
+            cleanedSummary = cleanedSummary.slice(3);
+          }
+          if (cleanedSummary.endsWith('```')) {
+            cleanedSummary = cleanedSummary.slice(0, -3);
+          }
+          // 去除首尾空格
+          cleanedSummary = cleanedSummary.trim();
+          
+          const parsedContent = JSON.parse(cleanedSummary);
+          setVideoSummary(parsedContent.summary);
+          if (parsedContent.events) {
+            setVideoEvents(parsedContent.events);
+          }
+        } catch (e) {
+          // 如果解析失败，说明返回的是普通文本
+          setVideoSummary(data.summary);
+          setVideoEvents([]);
+        }
       } else {
         console.error('API返回失败状态:', data);
         throw new Error(`获取视频总结失败: ${data.message || '未知错误'}`);
@@ -128,6 +152,8 @@ const BilibiliPlayer: React.FC<BilibiliPlayerProps> = ({ bvid, courseName, onClo
 
   // 构建B站播放器URL
   const buildBilibiliUrl = () => {
+    if (!bvid) return '';
+    
     const baseUrl = 'https://player.bilibili.com/player.html';
     const params = new URLSearchParams({
       bvid: bvid,
@@ -139,6 +165,11 @@ const BilibiliPlayer: React.FC<BilibiliPlayerProps> = ({ bvid, courseName, onClo
     });
     
     return `${baseUrl}?${params.toString()}`;
+  };
+  
+  // 跳转到指定时间点
+  const onJumpToTime = (seconds: number) => {
+    setPlayerOptions(prev => ({ ...prev, t: seconds }));
   };
 
   // 拖拽功能
@@ -248,6 +279,39 @@ const BilibiliPlayer: React.FC<BilibiliPlayerProps> = ({ bvid, courseName, onClo
           onClose={onClose}
           iframeRef={iframeRef}
         />
+        
+        {/* 视频时间点导航 */}
+        {videoEvents.length > 0 && (
+          <div className="px-4 py-3 bg-gray-900 border-t border-gray-700">
+            <h3 className="text-lg font-bold mb-2 text-white flex items-center">
+              <svg className="w-5 h-5 mr-2 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              视频时间点导航
+            </h3>
+            <div className="flex flex-wrap gap-2 overflow-x-auto pb-2">
+              {videoEvents.map((event, index) => {
+                // 解析时间戳格式 hh:mm:ss 为秒数
+                const parseHMS = (time: string): number => {
+                  const [hours = 0, minutes = 0, seconds = 0] = time.split(':').map(Number);
+                  return hours * 3600 + minutes * 60 + seconds;
+                };
+                
+                return (
+                  <button
+                    key={index}
+                    onClick={() => onJumpToTime(parseHMS(event.time))}
+                    className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-sm rounded transition-colors flex items-center whitespace-nowrap"
+                    title={event.message}
+                  >
+                    <span className="font-mono text-white">{event.time}</span>
+                    <span className="ml-2 text-xs opacity-80 text-white">{event.message}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
         
         {/* 视频总结区域 */}
         <VideoSummary
