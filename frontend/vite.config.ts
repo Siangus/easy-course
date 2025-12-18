@@ -6,6 +6,13 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 3000,
-    host: true
+    host: true,
+    proxy: {
+      '/api': {
+        target: 'http://course-jump-backend:3001',
+        changeOrigin: true,
+        secure: false
+      }
+    }
   }
 })

@@ -7,6 +7,7 @@ import dotenv from 'dotenv';
 import authRoutes from './routes/auth.routes';
 import courseRoutes from './routes/course.routes';
 import proxyRoutes from './routes/proxy.routes';
+import videoAnalysisRoutes from './routes/videoAnalysis.routes';
 
 // 加载环境变量
 dotenv.config();
@@ -43,10 +44,16 @@ const limiter = rateLimit({
 });
 app.use('/api/', limiter);
 
+// 静态文件服务 - 用于提供temp目录下的临时文件访问
+import path from 'path';
+const tempDir = path.join(process.cwd(), 'temp');
+app.use('/temp', express.static(tempDir));
+
 // 路由
 app.use('/api/auth', authRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/proxy', proxyRoutes);
+app.use('/api/video-analysis', videoAnalysisRoutes);
 
 // 错误处理中间件
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -55,6 +62,12 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
   console.error('请求方法:', req.method);
   console.error('错误堆栈:', err.stack);
   res.status(500).json({ error: '服务器内部错误', message: err.message });
+});
+
+// 初始化数据库
+import { initDatabase } from './utils/dbInit';
+initDatabase().catch(error => {
+  console.error('数据库初始化失败:', error);
 });
 
 // 启动服务器

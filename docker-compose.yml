@@ -15,6 +15,11 @@ services:
       - ./database/my.cnf:/etc/mysql/conf.d/my.cnf
     networks:
       - course-net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-ppassword"]
+      interval: 5s
+      timeout: 10s
+      retries: 5
 
   backend:
     build: ./backend
@@ -28,11 +33,12 @@ services:
       DB_PASSWORD: password
       DB_NAME: course_jump_system
     depends_on:
-      - mysql
+      mysql:
+        condition: service_healthy
     networks:
       - course-net
     volumes:
-      - ./backend/src:/app/src  # 只挂载源码，避免 node_modules 冲突
+      - ./backend/src:/app/src
 
   frontend:
     build: ./frontend
@@ -46,6 +52,11 @@ services:
       - ./frontend/src:/app/src
       - ./frontend/public:/app/public
       - ./frontend/index.html:/app/index.html
+      - ./frontend/package.json:/app/package.json
+      - ./frontend/vite.config.ts:/app/vite.config.ts
+      - ./frontend/tsconfig.json:/app/tsconfig.json
+      - ./frontend/tailwind.config.js:/app/tailwind.config.js
+      - ./frontend/postcss.config.js:/app/postcss.config.js
 
 networks:
   course-net:

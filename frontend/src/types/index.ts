@@ -8,6 +8,12 @@ export interface Course {
   lastAccessed?: string;
   accessCount: number;
   createdAt: string;
+  updatedAt: string;
+  bvid?: string;
+  aid?: string;
+  cid?: string;
+  episodeId?: string;
+  seasonId?: string;
 }
 
 // 用户类型

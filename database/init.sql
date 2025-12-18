@@ -26,15 +26,17 @@ CREATE TABLE IF NOT EXISTS courses (
     course_name VARCHAR(255) NOT NULL,
     course_url VARCHAR(500) NOT NULL,
     description TEXT,
-    login_url VARCHAR(500), -- 登录页面URL（如果与课程URL不同）
-    encrypted_credentials TEXT NOT NULL, -- 加密的登录凭证
-    iv VARCHAR(255) NOT NULL, -- 加密初始向量
-    auth_tag VARCHAR(255), -- GCM认证标签
+    login_url VARCHAR(500),
+    username VARCHAR(255) NOT NULL,
+    password VARCHAR(255) NOT NULL,
     last_accessed TIMESTAMP NULL,
     access_count INT DEFAULT 0,
-    is_active BOOLEAN DEFAULT TRUE,
+    is_active TINYINT(1) DEFAULT 1,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    encrypted_credentials TEXT NULL,
+    iv VARCHAR(32) NULL,
+    auth_tag VARCHAR(32) NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     INDEX idx_user_id (user_id),
     INDEX idx_course_name (course_name)
@@ -68,4 +70,29 @@ CREATE TABLE IF NOT EXISTS access_logs (
     FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE,
     INDEX idx_access_time (access_time),
     INDEX idx_user_course (user_id, course_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 5. 视频分析表
+CREATE TABLE IF NOT EXISTS video_analysis (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    bvid VARCHAR(20) NOT NULL,
+    course_id VARCHAR(36) NULL,
+    user_id INT NOT NULL,
+    status ENUM('pending', 'processing', 'completed', 'failed') DEFAULT 'pending',
+    ai_analysis_result TEXT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    UNIQUE KEY unique_bvid_user (bvid, user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 6. 知识点表
+CREATE TABLE IF NOT EXISTS knowledge_points (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    analysis_id INT NOT NULL,
+    start_time FLOAT NOT NULL,
+    end_time FLOAT NULL,
+    content TEXT NOT NULL,
+    FOREIGN KEY (analysis_id) REFERENCES video_analysis(id) ON DELETE CASCADE,
+    INDEX idx_analysis_id (analysis_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
