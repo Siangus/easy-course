@@ -78,12 +78,12 @@ const CourseDashboard: React.FC = () => {
     <div className="min-h-screen bg-gray-50">
       {/* 顶部导航栏 */}
       <nav className="bg-white shadow-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
+        <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between h-20">
             <div className="flex items-center">
-              <h1 className="text-xl font-bold text-gray-800">B站视频课程管理系统</h1>
+              <h1 className="text-2xl font-bold text-gray-800">B站视频课程管理系统</h1>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-8">
               {user && (
                 <div className="flex items-center space-x-2">
                   {user.avatar && (
@@ -154,7 +154,7 @@ const CourseDashboard: React.FC = () => {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
             {courses.map((course) => (
               <CourseCard
                 key={course.id}
