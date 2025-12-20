@@ -8,7 +8,7 @@ services:
       MYSQL_DATABASE: course_jump_system
       TZ: Asia/Shanghai
     ports:
-      - "3306:3306"
+      - "3307:3307"
     volumes:
       - ./mysql-data:/var/lib/mysql
       - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
